@@ -1,81 +1,72 @@
 import time
 import random
-dealerScore = 0
-playerScore = 0
-won = False ## true when score over 21
 
-spades = [11,2,3,4,5,6,7,8,9,10,10,10,10]
-clubs = [11,2,3,4,5,6,7,8,9,10,10,10,10]
-diamonds= [11,2,3,4,5,6,7,8,9,10,10,10,10]
-hearts = [11,2,3,4,5,6,7,8,9,10,10,10,10]
+def initialize_deck():
+    return [11, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10] * 4
 
-def hit(suit):
-    score = 0
-    if suit == 1:
-        randPlayer = random.randint(1,len(spades)-1)
-        score += spades[randPlayer]
-        spades.pop(randPlayer)
-    if suit == 2:
-        randPlayer = random.randint(1,len(clubs)-1)
-        score += clubs[randPlayer]
-        clubs.pop(randPlayer)
-    if suit == 3:
-        randPlayer = random.randint(1,len(diamonds)-1)
-        score += diamonds[randPlayer]
-        diamonds.pop(randPlayer)
-    if suit == 4:
-        randPlayer = random.randint(1,len(diamonds)-1)
-        score += diamonds[randPlayer]
-        diamonds.pop(randPlayer)  
-    return(score)
+def draw_card(deck):
+    if not deck:  # Reshuffle if deck is empty
+        deck.extend(initialize_deck())
+        random.shuffle(deck)
+    return deck.pop(random.randint(0, len(deck) - 1))
 
-playerScore += hit(random.randint(1,4))
-dealerScore = hit(random.randint(1,4))
-playerScore += hit(random.randint(1,4))
-dealerHiddenCard = hit(random.randint(1,4))
+def adjust_for_aces(score, cards):
+    """ Convert Aces from 11 to 1 if needed. """
+    while score > 21 and 11 in cards:
+        cards[cards.index(11)] = 1  # Change one Ace from 11 to 1
+        score = sum(cards)
+    return score
 
-while won == False:
+def blackjack():
+    deck = initialize_deck()
+    
+    player_cards = [draw_card(deck), draw_card(deck)]
+    dealer_cards = [draw_card(deck), draw_card(deck)]
+    
+    player_score = sum(player_cards)
+    dealer_score = dealer_cards[0]  # Only show one dealer card at first
+    
+    print(f"Dealer's visible card: {dealer_score}")
+    print(f"Your cards: {player_cards}, total score: {player_score}")
+    
+    while True:
+        choice = input("Do you want to hit or stand? (hit/stand): ").strip().lower()
 
-        print("Dealer Score = " + str(dealerScore) + "\nPlayer Score = " + str(playerScore))
-        time.sleep(1)
-        choice = input("Do you want to hit or stand?\n")
         if choice == "hit":
-            draw = hit(random.randint(1,4))
-            if draw == 11 and playerScore + 11 > 21:
-                draw = 1
-            playerScore += draw
-            if playerScore > 21:
-                time.sleep(1)
-                print("You lost!")
-                won = True
-            elif playerScore == 21:
-                time.sleep(1)
-                print("You won")
-                won = True
+            new_card = draw_card(deck)
+            player_cards.append(new_card)
+            player_score = adjust_for_aces(sum(player_cards), player_cards)
+            print(f"You drew {new_card}, total score: {player_score}")
+            
+            if player_score > 21:
+                print("You busted! The dealer wins.")
+                return
+            elif player_score == 21:
+                print("You got Blackjack!")
+                break  # Move to dealer's turn
+
         elif choice == "stand":
-                time.sleep(1)
-                if dealerHiddenCard == 11 and dealerScore + 11 > 21:
-                     dealerHiddenCard = 1
-                print("The dealers hidden card was " + str(dealerHiddenCard) + "!")
-                time.sleep(1)
-                dealerScore += dealerHiddenCard
-                print("Their score is now " + str(dealerScore) + "!")
-                while won != True:
-                    if dealerScore > 21:
-                        time.sleep(1)
-                        print("You won!")
-                        won = True
-                        break
-                    elif dealerScore == 21:
-                        time.sleep(1)
-                        print("The dealer won")
-                        won = True
-                        break
-                    
-                    draw = hit(random.randint(1,4))
-                    if draw == 11 and dealerScore + 11 > 21:
-                         draw = 1
-                    dealerScore += draw
-                    time.sleep(1)
-                    print("The dealer drew " + str(draw) + "\nThe dealers score is now " + str(dealerScore))
-                    time.sleep(1)
+            break
+
+    print(f"The dealer's hidden card was {dealer_cards[1]}!")
+    dealer_score = sum(dealer_cards)
+    
+    # Dealer's turn
+    while dealer_score < 17:
+        new_card = draw_card(deck)
+        dealer_cards.append(new_card)
+        dealer_score = adjust_for_aces(sum(dealer_cards), dealer_cards)
+        print(f"Dealer drew {new_card}, total score: {dealer_score}")
+        time.sleep(1)
+    
+    # Final results
+    print(f"Final Scores - You: {player_score}, Dealer: {dealer_score}")
+    if dealer_score > 21 or player_score > dealer_score:
+        print("You won!")
+    elif dealer_score == player_score:
+        print("It's a tie!")
+    else:
+        print("The dealer won!")
+
+if __name__ == "__main__":
+    blackjack()
